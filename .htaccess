@@ -1,0 +1,9 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Если запрос уже идет в public — не трогаем
+    RewriteCond %{REQUEST_URI} !^/public/
+
+    # Перенаправляем всё в папку public
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
