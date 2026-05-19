@@ -41,6 +41,7 @@ export default function CourseEditor({ course, instruments, workspace = 'admin' 
   const isEditing = Boolean(course)
   const basePath = workspace === 'teacher' ? '/teacher/courses' : '/admin/courses'
   const backUrl = workspace === 'teacher' ? '/teacher?section=courses' : '/admin?section=courses'
+  const submitLabel = workspace === 'teacher' ? 'Отправить на модерацию' : 'Сохранить курс'
 
   const update = (field: keyof Course, value: string | number) => {
     setForm((current) => ({ ...current, [field]: value }))
@@ -255,8 +256,7 @@ export default function CourseEditor({ course, instruments, workspace = 'admin' 
             </article>
           )}
           <div className="editor-actions">
-            <button className="pn-button" disabled={isSaving}>{isSaving ? 'Сохраняем...' : 'Сохранить'}</button>
-            <button type="submit" className="pn-button is-dark" disabled={isSaving}>{workspace === 'teacher' ? 'Отправить на модерацию' : 'Опубликовать'}</button>
+            <button type="submit" className="pn-button is-dark" disabled={isSaving}>{isSaving ? 'Сохраняем...' : submitLabel}</button>
           </div>
           {message && <p className="pn-text">{message}</p>}
         </form>
