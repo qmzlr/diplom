@@ -189,7 +189,7 @@ class AdminController extends Controller
 
     private function userPayload(?User $user): array
     {
-        abort_if(! $user, 404);
+        abort_if(! $user, 404, 'Пользователь не найден.');
 
         $user->load('instruments');
 

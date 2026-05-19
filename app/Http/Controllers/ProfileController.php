@@ -13,7 +13,7 @@ class ProfileController extends Controller
     public function update(Request $request): JsonResponse
     {
         $user = $this->user($request);
-        abort_if(! $user, 403);
+        abort_if(! $user, 403, 'Нужно войти в аккаунт.');
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -61,7 +61,7 @@ class ProfileController extends Controller
     public function avatar(Request $request): JsonResponse
     {
         $user = $this->user($request);
-        abort_if(! $user, 403);
+        abort_if(! $user, 403, 'Нужно войти в аккаунт.');
 
         $request->validate([
             'avatar' => ['required', 'image', 'max:2048'],

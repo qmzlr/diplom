@@ -20,12 +20,29 @@ function responseMessage(payload: any) {
     ? Object.values(payload.errors).flat().find(Boolean)
     : null
 
-  return String(
+  return localizeMessage(String(
     firstFieldError ||
       payload?.message ||
       payload?.error ||
       'Что-то пошло не так. Попробуйте снова.',
-  )
+  ))
+}
+
+function localizeMessage(message: string) {
+  const normalized = message.trim()
+  const knownMessages: Record<string, string> = {
+    'Forbidden': 'Доступ запрещён.',
+    'Not Found': 'Запрашиваемые данные не найдены.',
+    'Unauthorized': 'Нужно войти в аккаунт.',
+    'Unauthenticated.': 'Нужно войти в аккаунт.',
+    'CSRF token mismatch.': 'Сессия истекла. Обновите страницу и попробуйте снова.',
+    'Page Expired': 'Сессия истекла. Обновите страницу и попробуйте снова.',
+    'Server Error': 'Не удалось выполнить запрос. Попробуйте позже.',
+    'Internal Server Error': 'Не удалось выполнить запрос. Попробуйте позже.',
+    'The given data was invalid.': 'Проверьте заполненные поля.',
+  }
+
+  return knownMessages[normalized] ?? normalized
 }
 
 export async function postJson<T>(url: string, body: JsonBody = {}): Promise<T> {

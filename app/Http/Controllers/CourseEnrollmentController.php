@@ -12,7 +12,7 @@ class CourseEnrollmentController extends Controller
     public function store(Request $request, string $courseCode): JsonResponse
     {
         $userId = $request->session()->get('user_id');
-        abort_if(! $userId, 403);
+        abort_if(! $userId, 403, 'Нужно войти в аккаунт.');
 
         $course = Course::query()
             ->with('lessonList')

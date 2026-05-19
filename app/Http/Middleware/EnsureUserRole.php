@@ -19,7 +19,7 @@ class EnsureUserRole
                 $request->session()->forget('user_id');
             }
 
-            abort(403);
+            abort(403, $user?->is_banned ? 'Аккаунт заблокирован.' : 'Доступ запрещён.');
         }
 
         return $next($request);

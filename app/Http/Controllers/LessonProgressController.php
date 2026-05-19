@@ -13,7 +13,7 @@ class LessonProgressController extends Controller
     public function update(Request $request, Lesson $lesson): JsonResponse
     {
         $userId = $request->session()->get('user_id');
-        abort_if(! $userId, 403);
+        abort_if(! $userId, 403, 'Нужно войти в аккаунт.');
 
         $validated = $request->validate([
             'completed' => ['required', 'boolean'],

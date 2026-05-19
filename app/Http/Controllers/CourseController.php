@@ -33,7 +33,7 @@ class CourseController extends Controller
             ->where('code', $code)
             ->firstOrFail();
 
-        abort_if($course->status !== 'опубликовано', 404);
+        abort_if($course->status !== 'опубликовано', 404, 'Курс не найден.');
 
         return response()->json([
             'course' => $course->toFrontend(true, $request->session()->get('user_id')),
@@ -177,16 +177,16 @@ class CourseController extends Controller
 
     private function ensureCanManageCourse(?User $user, ?Course $course = null): void
     {
-        abort_if(! $user, 403);
+        abort_if(! $user, 403, 'Нужно войти в аккаунт.');
 
         if ($user->role === 'admin') {
             return;
         }
 
-        abort_if($user->role !== 'teacher' || $user->teacher_status !== 'одобрен', 403);
+        abort_if($user->role !== 'teacher' || $user->teacher_status !== 'одобрен', 403, 'Доступ запрещён.');
 
         if ($course) {
-            abort_if((int) $course->user_id !== (int) $user->id, 403);
+            abort_if((int) $course->user_id !== (int) $user->id, 403, 'Доступ запрещён.');
         }
     }
 

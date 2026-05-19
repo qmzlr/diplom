@@ -10,7 +10,7 @@ createInertiaApp({
     const page = pages[`./pages/${name}.tsx`]
 
     if (!page) {
-      throw new Error(`Page not found: ${name}`)
+      throw new Error(`Страница не найдена: ${name}`)
     }
 
     return page()

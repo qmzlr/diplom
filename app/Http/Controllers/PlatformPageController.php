@@ -38,7 +38,7 @@ class PlatformPageController extends Controller
             ->where('code', $courseId)
             ->firstOrFail();
 
-        abort_if(! $this->canViewCourse($course, $user), 404);
+        abort_if(! $this->canViewCourse($course, $user), 404, 'Курс не найден.');
 
         return Inertia::render('CourseDetail', [
             'course' => $course->toFrontend(true, $user?->id),
@@ -65,11 +65,11 @@ class PlatformPageController extends Controller
             ->where('code', $courseId)
             ->firstOrFail();
 
-        abort_if(! $this->canViewCourse($course, $user), 404);
+        abort_if(! $this->canViewCourse($course, $user), 404, 'Курс не найден.');
 
         $lesson = $course->lessonList->firstWhere('code', $lessonId) ?? $course->lessonList->first();
 
-        abort_if(! $lesson instanceof Lesson, 404);
+        abort_if(! $lesson instanceof Lesson, 404, 'Урок не найден.');
 
         return Inertia::render('LessonPage', [
             'course' => $course->toFrontend(true, $user?->id),
@@ -95,7 +95,7 @@ class PlatformPageController extends Controller
     public function profile(Request $request): Response
     {
         $user = $this->user($request);
-        abort_if(! $user, 403);
+        abort_if(! $user, 403, 'Нужно войти в аккаунт.');
         $selectedInstruments = $user->instruments()
             ->orderBy('instruments.id')
             ->get();
@@ -211,7 +211,7 @@ class PlatformPageController extends Controller
     public function teacher(Request $request): Response
     {
         $user = $this->user($request);
-        abort_if(! $user || $user->role !== 'teacher', 403);
+        abort_if(! $user || $user->role !== 'teacher', 403, 'Доступ запрещён.');
 
         if ($user->teacher_status !== 'одобрен') {
             return Inertia::render('TeacherStatus', [
@@ -246,15 +246,15 @@ class PlatformPageController extends Controller
     public function courseEditor(Request $request, ?string $courseId = null): Response
     {
         $user = $this->user($request);
-        abort_if(! $user, 403);
+        abort_if(! $user, 403, 'Нужно войти в аккаунт.');
 
         $course = $courseId
             ? Course::query()->with(['lessonList', 'owner'])->where('code', $courseId)->firstOrFail()
             : null;
 
         if ($user->role === 'teacher') {
-            abort_if($user->teacher_status !== 'одобрен', 403);
-            abort_if($course && (int) $course->user_id !== (int) $user->id, 403);
+            abort_if($user->teacher_status !== 'одобрен', 403, 'Доступ запрещён.');
+            abort_if($course && (int) $course->user_id !== (int) $user->id, 403, 'Доступ запрещён.');
         }
 
         return Inertia::render('CourseEditor', [

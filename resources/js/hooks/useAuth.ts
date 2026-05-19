@@ -37,7 +37,7 @@ export function useAuth(options?: UseAuthOptions) {
       await postJson<{ success: boolean }>("/logout");
       router.visit(redirectPath);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error("Logout failed"));
+      setError(err instanceof Error ? err : new Error("Не удалось выйти из аккаунта."));
     } finally {
       setIsLoggingOut(false);
     }

@@ -29,7 +29,7 @@ class PlatformCommentController extends Controller
     public function store(Request $request): JsonResponse
     {
         $user = $this->user($request);
-        abort_if(! $user, 403);
+        abort_if(! $user, 403, 'Нужно войти в аккаунт.');
 
         $validated = $request->validate([
             'text' => ['required', 'string'],
@@ -97,21 +97,21 @@ class PlatformCommentController extends Controller
                 ->where('course_id', $course->id)
                 ->exists();
 
-            abort_if(! $isEnrolled, 403);
+            abort_if(! $isEnrolled, 403, 'Комментарий доступен после записи на курс.');
 
             return ['label' => $course->title, 'code' => $course->code, 'course_id' => $course->id];
         }
 
         if ($type === 'lesson') {
             $lesson = Lesson::query()->with('course')->where('code', $code)->firstOrFail();
-            abort_if($lesson->course?->status !== 'опубликовано', 404);
+            abort_if($lesson->course?->status !== 'опубликовано', 404, 'Урок не найден.');
             $isCompleted = LessonProgress::query()
                 ->where('userId', $user->id)
                 ->where('lesson_id', $lesson->id)
                 ->where('completed', true)
                 ->exists();
 
-            abort_if(! $isCompleted, 403);
+            abort_if(! $isCompleted, 403, 'Комментарий доступен после прохождения урока.');
 
             return [
                 'label' => ($lesson->course?->title ?? 'Курс').' · '.$lesson->title,

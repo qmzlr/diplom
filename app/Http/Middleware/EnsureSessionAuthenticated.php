@@ -20,7 +20,7 @@ class EnsureSessionAuthenticated
             }
 
             if ($request->expectsJson()) {
-                abort(403);
+                abort(403, $user?->is_banned ? 'Аккаунт заблокирован.' : 'Нужно войти в аккаунт.');
             }
 
             return redirect()->route('login');
