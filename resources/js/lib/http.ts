@@ -15,6 +15,19 @@ function csrfToken() {
     ?.getAttribute('content')
 }
 
+function responseMessage(payload: any) {
+  const firstFieldError = payload?.errors
+    ? Object.values(payload.errors).flat().find(Boolean)
+    : null
+
+  return String(
+    firstFieldError ||
+      payload?.message ||
+      payload?.error ||
+      'Что-то пошло не так. Попробуйте снова.',
+  )
+}
+
 export async function postJson<T>(url: string, body: JsonBody = {}): Promise<T> {
   return sendJson<T>('POST', url, body)
 }
@@ -34,12 +47,7 @@ export async function postFormData<T>(url: string, body: FormData): Promise<T> {
   const payload = await response.json().catch(() => null)
 
   if (!response.ok) {
-    const message =
-      payload?.message ||
-      payload?.error ||
-      'Что-то пошло не так. Попробуйте снова.'
-
-    throw new Error(message)
+    throw new Error(responseMessage(payload))
   }
 
   return payload as T
@@ -101,7 +109,7 @@ export function uploadFormData<T>(
       emit(request.upload ? 1 : 0, request.upload ? 1 : null, request.status >= 200 && request.status < 300 ? 'done' : 'error')
 
       if (request.status < 200 || request.status >= 300) {
-        reject(new Error(payload?.message || payload?.error || 'Что-то пошло не так. Попробуйте снова.'))
+        reject(new Error(responseMessage(payload)))
         return
       }
 
@@ -145,12 +153,7 @@ async function sendJson<T>(method: string, url: string, body?: JsonBody): Promis
   const payload = await response.json().catch(() => null)
 
   if (!response.ok) {
-    const message =
-      payload?.message ||
-      payload?.error ||
-      'Что-то пошло не так. Попробуйте снова.'
-
-    throw new Error(message)
+    throw new Error(responseMessage(payload))
   }
 
   return payload as T

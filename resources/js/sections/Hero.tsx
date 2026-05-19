@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { router } from '@inertiajs/react'
 import { useAuth } from '@/hooks/useAuth'
 import { postJson } from '@/lib/http'
 
@@ -6,6 +7,7 @@ export default function Hero() {
   const [submitHovered, setSubmitHovered] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [privacyConsent, setPrivacyConsent] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -36,8 +38,8 @@ export default function Hero() {
     e.preventDefault()
     setSubmitError(null)
 
-    if (!formData.name || !formData.email) {
-      setSubmitError('Пожалуйста, заполните обязательные поля.')
+    if (!formData.name || !formData.email || !privacyConsent) {
+      setSubmitError('Заполните обязательные поля и подтвердите согласие с политикой конфиденциальности.')
       return
     }
 
@@ -48,6 +50,7 @@ export default function Hero() {
       instrument: formData.instrument,
       level: formData.level,
       goal: formData.goal,
+      privacyConsent,
     })
       .then(() => {
         setSubmitted(true)
@@ -253,9 +256,47 @@ export default function Hero() {
                   'Улучшить ритм',
                 ]}
               />
+              <label
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '18px 1fr',
+                  gap: '12px',
+                  alignItems: 'start',
+                  color: 'rgba(255,255,255,0.72)',
+                  fontSize: '14px',
+                  lineHeight: 1.5,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={privacyConsent}
+                  onChange={(e) => setPrivacyConsent(e.target.checked)}
+                  required
+                  style={{ width: '18px', height: '18px', marginTop: '2px', accentColor: '#fff' }}
+                />
+                <span>
+                  Я согласен на обработку персональных данных и ознакомлен с{' '}
+                  <button
+                    type="button"
+                    onClick={() => router.visit('/privacy')}
+                    style={{
+                      border: 0,
+                      padding: 0,
+                      background: 'transparent',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                      textUnderlineOffset: '4px',
+                    }}
+                  >
+                    политикой конфиденциальности
+                  </button>
+                  .
+                </span>
+              </label>
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !privacyConsent}
                 onMouseEnter={() => setSubmitHovered(true)}
                 onMouseLeave={() => setSubmitHovered(false)}
                 style={{

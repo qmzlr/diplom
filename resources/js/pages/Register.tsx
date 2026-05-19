@@ -2,7 +2,7 @@ import { router } from '@inertiajs/react'
 import { useState } from 'react'
 import { AppShell } from '@/components/AppShell'
 import type { Instrument } from '@/data/courses'
-import { postJson } from '@/lib/http'
+import { postFormData, postJson } from '@/lib/http'
 
 export default function Register({ instruments }: { instruments: Instrument[] }) {
   const [message, setMessage] = useState('')
@@ -12,6 +12,9 @@ export default function Register({ instruments }: { instruments: Instrument[] })
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirmation, setPasswordConfirmation] = useState('')
+  const [emailVerificationCode, setEmailVerificationCode] = useState('')
+  const [isCodeSent, setIsCodeSent] = useState(false)
+  const [teacherDocuments, setTeacherDocuments] = useState<File[]>([])
   const [selectedIds, setSelectedIds] = useState(() => new Set(instruments[0]?.id ? [instruments[0].id] : []))
   const [level, setLevel] = useState('Начинающий')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -50,16 +53,30 @@ export default function Register({ instruments }: { instruments: Instrument[] })
             setMessage('')
 
             try {
-              await postJson('/register', {
-                name,
-                email,
-                password,
-                password_confirmation: passwordConfirmation,
-                accountType,
-                instrument: instruments.find((item) => selectedIds.has(item.id))?.name ?? '',
-                instrumentIds: Array.from(selectedIds),
-                level: accountType === 'student' ? level : undefined,
-              })
+              if (!isCodeSent) {
+                await postJson('/register/email-code', { email })
+                setIsCodeSent(true)
+                setMessage('Мы отправили код подтверждения на вашу почту. Введите его ниже и завершите регистрацию.')
+                return
+              }
+
+              const body = new FormData()
+              body.append('name', name)
+              body.append('email', email)
+              body.append('emailVerificationCode', emailVerificationCode)
+              body.append('password', password)
+              body.append('password_confirmation', passwordConfirmation)
+              body.append('accountType', accountType)
+              body.append('instrument', instruments.find((item) => selectedIds.has(item.id))?.name ?? '')
+              Array.from(selectedIds).forEach((id) => body.append('instrumentIds[]', id))
+              if (accountType === 'student') {
+                body.append('level', level)
+              }
+              if (accountType === 'teacher') {
+                teacherDocuments.forEach((file) => body.append('teacherDocuments[]', file))
+              }
+
+              await postFormData('/register', body)
               router.visit(accountType === 'teacher' ? '/teacher' : '/profile')
             } catch (error) {
               setMessage(error instanceof Error ? error.message : 'Не удалось создать аккаунт.')
@@ -87,9 +104,31 @@ export default function Register({ instruments }: { instruments: Instrument[] })
             </button>
           </div>
           <input className="pn-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Имя" required />
-          <input className="pn-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" required />
+          <input
+            className="pn-input"
+            type="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value)
+              setIsCodeSent(false)
+              setEmailVerificationCode('')
+            }}
+            placeholder="Email"
+            required
+          />
           <input className="pn-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Пароль" required />
           <input className="pn-input" type="password" value={passwordConfirmation} onChange={(e) => setPasswordConfirmation(e.target.value)} placeholder="Подтверждение пароля" required />
+          {isCodeSent && (
+            <input
+              className="pn-input"
+              inputMode="numeric"
+              maxLength={6}
+              value={emailVerificationCode}
+              onChange={(e) => setEmailVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="Код из письма"
+              required
+            />
+          )}
           <div className="pn-meta">{accountType === 'teacher' ? 'Инструменты преподавания' : 'Интересующие инструменты'}</div>
           <div className="dashboard-chip-list profile-instrument-picker auth-instrument-picker" aria-label="Инструменты">
             {instruments.map((instrument) => (
@@ -110,7 +149,24 @@ export default function Register({ instruments }: { instruments: Instrument[] })
               <option>Средний</option>
             </select>
           ) : (
-            <p className="teacher-register-note">После регистрации модератор проверит заявку. Курсы можно будет создавать после одобрения.</p>
+            <>
+              <label className="teacher-documents-field">
+                <span>Сертификаты, грамоты, дипломы</span>
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
+                  onChange={(e) => setTeacherDocuments(Array.from(e.target.files ?? []))}
+                />
+                <em>
+                  Можно приложить до 8 файлов: PDF, изображения, DOC или DOCX. Модератор увидит их вместе с заявкой.
+                </em>
+                {teacherDocuments.length > 0 && (
+                  <strong>{teacherDocuments.length} файл(а) выбрано</strong>
+                )}
+              </label>
+              <p className="teacher-register-note">После регистрации модератор проверит заявку. Курсы можно будет создавать после одобрения.</p>
+            </>
           )}
           <label className="privacy-consent">
             <input
@@ -124,7 +180,9 @@ export default function Register({ instruments }: { instruments: Instrument[] })
               <button type="button" onClick={() => router.visit('/privacy')}>политикой конфиденциальности</button>.
             </span>
           </label>
-          <button className="pn-button is-dark" disabled={!agreed || isSubmitting}>{isSubmitting ? 'Создаём...' : 'Создать аккаунт'}</button>
+          <button className="pn-button is-dark" disabled={!agreed || isSubmitting}>
+            {isSubmitting ? 'Проверяем...' : isCodeSent ? 'Создать аккаунт' : 'Получить код'}
+          </button>
           <button type="button" className="auth-link" onClick={() => router.visit('/login')}>Уже есть аккаунт?</button>
           {message && <p className="pn-text">{message}</p>}
         </form>

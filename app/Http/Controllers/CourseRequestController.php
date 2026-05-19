@@ -16,10 +16,11 @@ class CourseRequestController extends Controller
             'instrument' => ['required', 'string', 'max:128'],
             'level' => ['required', 'string', 'max:64'],
             'goal' => ['required', 'string', 'max:255'],
+            'privacyConsent' => ['accepted'],
         ]);
 
         $courseRequest = CourseRequest::query()->create([
-            ...$validated,
+            ...collect($validated)->except('privacyConsent')->all(),
             'userId' => $request->session()->get('user_id'),
         ]);
 

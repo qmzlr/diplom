@@ -211,10 +211,13 @@ class PlatformSeeder extends Seeder
             ['title' => 'Вокал: работа над фразой', 'description' => 'Повтор сложного фрагмента.', 'instrument' => 'Вокал', 'status' => 'опубликовано', 'image' => '/images/course-vocal.jpg'],
         ];
 
-        foreach ($videos as $video) {
+        foreach ($videos as $index => $video) {
             UserVideo::query()->updateOrCreate(
                 ['title' => $video['title']],
-                $video,
+                [
+                    ...$video,
+                    'video' => $lessonVideos[$index % count($lessonVideos)],
+                ],
             );
         }
 

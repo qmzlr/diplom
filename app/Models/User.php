@@ -25,6 +25,7 @@ class User extends Model
         'avatar',
         'role',
         'teacher_status',
+        'teacher_documents',
         'instrument',
         'level',
         'lastSignInAt',
@@ -43,6 +44,7 @@ class User extends Model
             'createdAt' => 'datetime',
             'updatedAt' => 'datetime',
             'lastSignInAt' => 'datetime',
+            'teacher_documents' => 'array',
         ];
     }
 
