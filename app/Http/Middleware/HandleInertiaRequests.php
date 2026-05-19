@@ -38,10 +38,22 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => fn () => $request->session()->has('user_id')
-                    ? \App\Models\User::query()->find($request->session()->get('user_id'))
-                    : null,
+                'user' => fn () => $this->sharedUser($request),
             ],
         ];
+    }
+
+    private function sharedUser(Request $request): ?\App\Models\User
+    {
+        $userId = $request->session()->get('user_id');
+        $user = $userId ? \App\Models\User::query()->find($userId) : null;
+
+        if ($user?->is_banned) {
+            $request->session()->forget('user_id');
+
+            return null;
+        }
+
+        return $user;
     }
 }

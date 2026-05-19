@@ -80,6 +80,7 @@ export interface AdminUser {
   avatar: string | null
   role: 'user' | 'admin' | 'moderator' | 'teacher'
   teacherStatus?: 'ожидает' | 'одобрен' | 'отклонён' | null
+  isBanned?: boolean
   instrument: string | null
   level: string | null
   instrumentIds: string[]

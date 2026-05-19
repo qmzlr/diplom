@@ -475,6 +475,7 @@ class PlatformPageController extends Controller
             'avatar' => $user->avatar,
             'role' => $user->role,
             'teacherStatus' => $user->teacher_status,
+            'isBanned' => $user->is_banned,
             'instrument' => $user->instrument,
             'level' => $user->level,
             'instrumentIds' => $user->instruments->pluck('slug')->values()->all(),

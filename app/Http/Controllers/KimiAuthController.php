@@ -23,6 +23,8 @@ class KimiAuthController extends Controller
             ],
         );
 
+        abort_if($user->is_banned, 403, 'Аккаунт заблокирован.');
+
         $request->session()->put('user_id', $user->id);
         $request->session()->regenerate();
 

@@ -4,7 +4,7 @@ import { AppShell, PageHero, SectionTitle } from '@/components/AppShell'
 import { initialUploadProgress, UploadProgress } from '@/components/UploadProgress'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { AdminUser, Course, Instrument } from '@/data/courses'
-import { deleteJson, postJson, putJson, uploadFormData, type UploadProgressState } from '@/lib/http'
+import { deleteJson, patchJson, postJson, putJson, uploadFormData, type UploadProgressState } from '@/lib/http'
 import { toast } from 'sonner'
 
 type Tab = 'Курсы' | 'Пользователи' | 'Инструменты'
@@ -121,12 +121,15 @@ function UsersPanel({ instruments, query, users, onChange }: { instruments: Inst
   const page = usePagedRows(rows)
   const [editing, setEditing] = useState<AdminUser | null>(null)
 
-  const remove = async (user: AdminUser) => {
-    if (!window.confirm(`Удалить пользователя "${user.name || user.email}"?`)) return
+  const toggleBan = async (user: AdminUser) => {
+    const nextState = !user.isBanned
+    const action = nextState ? 'заблокировать' : 'разблокировать'
+    if (!window.confirm(`${action[0].toUpperCase()}${action.slice(1)} пользователя "${user.name || user.email}"?`)) return
+
     try {
-      await deleteJson('/api/admin/users/' + user.id)
-      onChange(users.filter((item) => item.id !== user.id))
-      toast.success('Пользователь удалён.')
+      const response = await patchJson<{ user: AdminUser }>(`/api/admin/users/${user.id}/ban`, { isBanned: nextState })
+      onChange(users.map((item) => item.id === user.id ? response.user : item))
+      toast.success(nextState ? 'Пользователь заблокирован.' : 'Пользователь разблокирован.')
     } catch (error) {
       toast.error(errorMessage(error))
     }
@@ -149,9 +152,9 @@ function UsersPanel({ instruments, query, users, onChange }: { instruments: Inst
       <div className="admin-table">
         {page.rows.map((user) => (
           <article className="admin-row" key={user.id}>
-            <span><strong>{user.name || 'Без имени'}</strong><em>{user.email || 'без email'} · {roleLabel(user.role)}{user.role === 'teacher' ? ` · ${user.teacherStatus || 'ожидает'}` : ''} · {user.instrument || 'инструмент не выбран'}</em></span>
+            <span><strong>{user.name || 'Без имени'}</strong><em>{user.email || 'без email'} · {roleLabel(user.role)}{user.role === 'teacher' ? ` · ${user.teacherStatus || 'ожидает'}` : ''} · {user.instrument || 'инструмент не выбран'}{user.isBanned ? ' · заблокирован' : ''}</em></span>
             <button className="pn-button" onClick={() => setEditing(user)}>Редактировать</button>
-            <button className="pn-button" onClick={() => remove(user)}>Удалить</button>
+            <button className="pn-button" onClick={() => toggleBan(user)}>{user.isBanned ? 'Разбанить' : 'Забанить'}</button>
           </article>
         ))}
       </div>
@@ -391,6 +394,7 @@ function emptyUser(): AdminUser {
     avatar: '',
     role: 'user',
     teacherStatus: null,
+    isBanned: false,
     instrument: '',
     level: 'Начинающий',
     instrumentIds: [],

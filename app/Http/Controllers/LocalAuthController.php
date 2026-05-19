@@ -29,6 +29,8 @@ class LocalAuthController extends Controller
             ]);
         }
 
+        abort_if($user->is_banned, 403, 'Аккаунт заблокирован.');
+
         $user->update(['lastSignInAt' => now()]);
         $request->session()->put('user_id', $user->id);
         $request->session()->regenerate();
@@ -148,6 +150,8 @@ class LocalAuthController extends Controller
         $this->verifyCode($email, 'password_reset', $validated['code']);
 
         $user = User::query()->where('email', $email)->firstOrFail();
+        abort_if($user->is_banned, 403, 'Аккаунт заблокирован.');
+
         $user->update([
             'password' => Hash::make($validated['password']),
             'lastSignInAt' => now(),

@@ -14,7 +14,11 @@ class EnsureUserRole
         $userId = $request->session()->get('user_id');
         $user = $userId ? User::query()->find($userId) : null;
 
-        if (! $user || ! in_array($user->role, $roles, true)) {
+        if (! $user || $user->is_banned || ! in_array($user->role, $roles, true)) {
+            if ($user?->is_banned) {
+                $request->session()->forget('user_id');
+            }
+
             abort(403);
         }
 

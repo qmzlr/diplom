@@ -26,6 +26,7 @@ class User extends Model
         'role',
         'teacher_status',
         'teacher_documents',
+        'is_banned',
         'instrument',
         'level',
         'lastSignInAt',
@@ -45,6 +46,7 @@ class User extends Model
             'updatedAt' => 'datetime',
             'lastSignInAt' => 'datetime',
             'teacher_documents' => 'array',
+            'is_banned' => 'boolean',
         ];
     }
 

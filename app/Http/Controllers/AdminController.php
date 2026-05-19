@@ -69,6 +69,20 @@ class AdminController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function updateUserBan(Request $request, int $id): JsonResponse
+    {
+        abort_if((int) $request->session()->get('user_id') === $id, 422, 'Нельзя заблокировать текущего администратора.');
+
+        $validated = $request->validate([
+            'isBanned' => ['required', 'boolean'],
+        ]);
+
+        $user = User::query()->findOrFail($id);
+        $user->update(['is_banned' => $validated['isBanned']]);
+
+        return response()->json(['user' => $this->userPayload($user->fresh())]);
+    }
+
     public function storeInstrument(Request $request): JsonResponse
     {
         $validated = $this->validatedInstrument($request);
@@ -186,6 +200,7 @@ class AdminController extends Controller
             'avatar' => $user->avatar,
             'role' => $user->role,
             'teacherStatus' => $user->teacher_status,
+            'isBanned' => $user->is_banned,
             'instrument' => $user->instrument,
             'level' => $user->level,
             'instrumentIds' => $user->instruments->pluck('slug')->values()->all(),

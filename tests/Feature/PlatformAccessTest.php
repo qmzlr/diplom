@@ -95,6 +95,16 @@ class PlatformAccessTest extends TestCase
             ->assertJsonPath('user.role', 'admin');
 
         $this->withSession(['user_id' => $admin->id])
+            ->patchJson("/api/admin/users/{$createdUser}/ban", ['isBanned' => true])
+            ->assertOk()
+            ->assertJsonPath('user.isBanned', true);
+
+        $this->withSession(['user_id' => $admin->id])
+            ->patchJson("/api/admin/users/{$createdUser}/ban", ['isBanned' => false])
+            ->assertOk()
+            ->assertJsonPath('user.isBanned', false);
+
+        $this->withSession(['user_id' => $admin->id])
             ->postJson('/api/admin/instruments', [
                 'slug' => 'bass',
                 'name' => 'Бас',
@@ -114,6 +124,20 @@ class PlatformAccessTest extends TestCase
             'userId' => (int) $createdUser,
             'instrument_id' => $instrument->id,
         ]);
+    }
+
+    public function test_banned_user_cannot_access_authenticated_routes(): void
+    {
+        $user = $this->user('user', 'banned@example.com');
+        $user->update(['is_banned' => true]);
+
+        $this->withSession(['user_id' => $user->id])
+            ->get('/profile')
+            ->assertRedirect('/login');
+
+        $this->withSession(['user_id' => $user->id])
+            ->postJson('/api/courses/T1/enroll')
+            ->assertForbidden();
     }
 
     public function test_admin_upload_accepts_images_and_videos(): void
@@ -811,6 +835,28 @@ class PlatformAccessTest extends TestCase
             'course_count' => 99,
         ]);
         Course::query()->create($this->coursePayload());
+
+        $this->get('/instruments')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Instruments')
+                ->where('instruments.0.courseCount', 1)
+            );
+    }
+
+    public function test_theory_instrument_counts_generic_theory_course(): void
+    {
+        Instrument::query()->create([
+            'slug' => 'theory',
+            'name' => 'Теория',
+            'image' => '/images/course-theory.jpg',
+            'description' => 'Instrument',
+            'course_count' => 0,
+        ]);
+        Course::query()->create([
+            ...$this->coursePayload(),
+            'instrument' => 'Любой инструмент',
+        ]);
 
         $this->get('/instruments')
             ->assertOk()

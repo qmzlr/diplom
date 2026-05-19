@@ -69,7 +69,7 @@ export default function Header({ forceLight = false }: HeaderProps) {
   const visibleNavItems = [
     ...navItems,
     ...(user?.role === 'teacher' ? [{ label: 'Учителю', target: '/teacher' }] : []),
-    ...(user?.role === 'admin' || user?.role === 'moderator' ? [{ label: 'Модерация', target: '/moderator' }] : []),
+    ...(user?.role === 'moderator' ? [{ label: 'Модерация', target: '/moderator' }] : []),
     ...(user?.role === 'admin' ? [{ label: 'Админ', target: '/admin' }] : []),
   ]
 

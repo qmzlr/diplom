@@ -81,6 +81,7 @@ Route::prefix('api')->name('api.')->group(function () {
         Route::post('/users', [AdminController::class, 'storeUser'])->name('users.store');
         Route::post('/uploads', [AdminController::class, 'upload'])->name('uploads.store');
         Route::put('/users/{user}', [AdminController::class, 'updateUser'])->name('users.update');
+        Route::patch('/users/{user}/ban', [AdminController::class, 'updateUserBan'])->name('users.ban');
         Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('users.destroy');
         Route::post('/instruments', [AdminController::class, 'storeInstrument'])->name('instruments.store');
         Route::put('/instruments/{instrument}', [AdminController::class, 'updateInstrument'])->name('instruments.update');
