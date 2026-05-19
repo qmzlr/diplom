@@ -1955,7 +1955,8 @@
   }
 
   .attachment-preview__meta span,
-  .attachment-preview__meta a {
+  .attachment-preview__meta a,
+  .attachment-preview__open {
     color: #666;
     font-size: 12px;
     text-transform: uppercase;
@@ -1963,10 +1964,31 @@
     text-decoration: none;
   }
 
-  .attachment-preview__meta a {
+  .attachment-preview__open {
     width: fit-content;
     color: #000;
     border-bottom: 1px solid currentColor;
+    border-top: 0;
+    border-right: 0;
+    border-left: 0;
+    background: transparent;
+    padding: 0 0 2px;
+    cursor: pointer;
+  }
+
+  .attachment-preview__viewer {
+    grid-column: 1 / -1;
+    border-top: 1px solid rgba(0,0,0,0.12);
+    padding-top: 8px;
+  }
+
+  .attachment-preview__viewer img,
+  .attachment-preview__viewer video {
+    width: 100%;
+    height: auto;
+    max-height: 520px;
+    object-fit: contain;
+    background: #111;
   }
 
   .table-pagination,

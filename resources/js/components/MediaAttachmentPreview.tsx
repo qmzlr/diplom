@@ -33,9 +33,11 @@ export function MediaAttachmentPreview({ value, values, kind, emptyText = 'Фа�
 
 function SinglePreview({ value, kind }: { value: string | File; kind?: PreviewKind }) {
   const [fileUrl, setFileUrl] = useState<string | null>(null)
+  const [isOpen, setIsOpen] = useState(false)
   const source = typeof value === 'string' ? value : fileUrl
   const filename = typeof value === 'string' ? fileName(value) : value.name
   const resolvedKind = kind ?? inferKind(value)
+  const canPreview = Boolean(source && (resolvedKind === 'image' || resolvedKind === 'video'))
 
   useEffect(() => {
     if (typeof value === 'string') {
@@ -59,12 +61,22 @@ function SinglePreview({ value, kind }: { value: string | File; kind?: PreviewKi
       <div className="attachment-preview__meta">
         <strong>{filename}</strong>
         <span>{resolvedKind === 'image' ? 'изображение' : resolvedKind === 'video' ? 'видео' : 'файл'}</span>
-        {canOpen && (
-          <a href={source ?? undefined} target="_blank" rel="noreferrer">
+        {canPreview ? (
+          <button type="button" className="attachment-preview__open" onClick={() => setIsOpen((current) => !current)}>
+            {isOpen ? 'Свернуть' : 'Открыть'}
+          </button>
+        ) : canOpen && (
+          <a className="attachment-preview__open" href={source ?? undefined} download={typeof value === 'string' ? undefined : filename}>
             Открыть
           </a>
         )}
       </div>
+      {isOpen && source && (
+        <div className="attachment-preview__viewer">
+          {resolvedKind === 'image' && <img src={source} alt={filename} />}
+          {resolvedKind === 'video' && <video src={source} controls autoPlay preload="metadata" />}
+        </div>
+      )}
     </div>
   )
 }
