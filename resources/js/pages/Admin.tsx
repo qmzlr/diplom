@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { router } from '@inertiajs/react'
 import { AppShell, PageHero, SectionTitle } from '@/components/AppShell'
+import { MediaAttachmentPreview } from '@/components/MediaAttachmentPreview'
 import { initialUploadProgress, UploadProgress } from '@/components/UploadProgress'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { AdminUser, Course, Instrument } from '@/data/courses'
@@ -228,6 +229,7 @@ function UserForm({ instruments, user, onCancel, onSaved }: { instruments: Instr
           <span>{form.avatar ? 'Фото прикреплено' : 'Прикрепить фото'}</span>
           <input type="file" accept="image/*" onChange={(event) => uploadAvatar(event.target.files?.[0] ?? null)} />
         </label>
+        <MediaAttachmentPreview value={form.avatar} kind="image" emptyText="Фото пока не выбрано." />
         <UploadProgress progress={uploadProgress} />
       </FieldLabel>
       <FieldLabel label="Роль">
@@ -356,7 +358,7 @@ function InstrumentForm({ instrument, onCancel, onSaved }: { instrument: Instrum
       <FieldLabel label="Название"><input className="pn-input" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required /></FieldLabel>
       <FieldLabel label="Изображение">
         <FileControl id={`instrument-image-${form.id || 'new'}`} label={form.image ? 'Изображение прикреплено' : 'Добавить изображение'} accept="image/*" onChange={uploadImage} />
-        <AttachmentStatus value={form.image} emptyText="Изображение пока не выбрано." />
+        <MediaAttachmentPreview value={form.image} kind="image" emptyText="Изображение пока не выбрано." />
         <UploadProgress progress={uploadProgress} />
       </FieldLabel>
       <FieldLabel label="Описание"><textarea className="pn-textarea" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} required /></FieldLabel>
@@ -497,18 +499,6 @@ function FileControl({ id, label, accept, onChange }: { id: string; label: strin
       </label>
     </>
   )
-}
-
-function AttachmentStatus({ value, emptyText }: { value: string; emptyText: string }) {
-  if (!value) {
-    return <em>{emptyText}</em>
-  }
-
-  return <em className="attachment-status">Прикреплено: {fileName(value)}</em>
-}
-
-function fileName(value: string) {
-  return value.split('/').filter(Boolean).at(-1) ?? value
 }
 
 function errorMessage(error: unknown) {

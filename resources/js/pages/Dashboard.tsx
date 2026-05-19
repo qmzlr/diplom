@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react'
 import { useState } from 'react'
 import { AppShell, PageHero, ProgressLine, SectionTitle } from '@/components/AppShell'
+import { MediaAttachmentPreview } from '@/components/MediaAttachmentPreview'
 import { initialUploadProgress, UploadProgress } from '@/components/UploadProgress'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { CompletedLesson, Course, Instrument, UserVideo } from '@/data/courses'
@@ -235,6 +236,7 @@ export default function Dashboard({
                 <span>{isAvatarUploading ? 'Загружаем фото...' : avatar ? 'Фото прикреплено' : 'Прикрепить фото профиля'}</span>
                 <input type="file" accept="image/*" onChange={uploadAvatar} disabled={isAvatarUploading} />
               </label>
+              <MediaAttachmentPreview value={avatar} kind="image" emptyText="Фото профиля пока не выбрано." />
               <UploadProgress progress={avatarProgress} />
             </FieldLabel>
             <FieldLabel label="Уровень">

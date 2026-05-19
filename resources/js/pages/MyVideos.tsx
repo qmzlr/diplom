@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { router } from '@inertiajs/react'
 import { AppShell, PageHero } from '@/components/AppShell'
+import { MediaAttachmentPreview } from '@/components/MediaAttachmentPreview'
 import { initialUploadProgress, UploadProgress } from '@/components/UploadProgress'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { Instrument, UserVideo } from '@/data/courses'
@@ -167,6 +168,7 @@ export default function MyVideos({ instruments, userVideos }: { instruments: Ins
               <span>{videoFile ? videoFile.name : 'Прикрепить видео'}</span>
               <input key={videoInputKey} type="file" accept="video/*" onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)} />
             </label>
+            <MediaAttachmentPreview value={videoFile} kind="video" emptyText="Видео пока не выбрано." />
             <UploadProgress progress={uploadProgress} />
             <button className="pn-button is-dark" disabled={isUploading || !videoFile}>{isUploading ? 'Загружаем...' : 'Загрузить'}</button>
             {message && isUploadDialogOpen && <p className="pn-text">{message}</p>}

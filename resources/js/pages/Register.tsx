@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react'
 import { useState } from 'react'
 import { AppShell } from '@/components/AppShell'
+import { MediaAttachmentPreview } from '@/components/MediaAttachmentPreview'
 import type { Instrument } from '@/data/courses'
 import { postFormData, postJson } from '@/lib/http'
 
@@ -164,6 +165,7 @@ export default function Register({ instruments }: { instruments: Instrument[] })
                 {teacherDocuments.length > 0 && (
                   <strong>{teacherDocuments.length} файл(а) выбрано</strong>
                 )}
+                <MediaAttachmentPreview values={teacherDocuments} kind="file" emptyText="Документы пока не выбраны." />
               </label>
               <p className="teacher-register-note">После регистрации модератор проверит заявку. Курсы можно будет создавать после одобрения.</p>
             </>
