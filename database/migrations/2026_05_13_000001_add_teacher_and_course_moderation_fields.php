@@ -18,7 +18,7 @@ return new class extends Migration
         });
 
         Schema::table('courses', function (Blueprint $table) {
-            $table->foreignId('user_id')->nullable()->after('id')->constrained('users')->nullOnDelete();
+            $table->foreignId('user_id')->nullable()->after('id')->constrained('users')->cascadeOnDelete();
             $table->enum('status', ['черновик', 'на модерации', 'опубликовано', 'отклонено'])->default('опубликовано')->after('user_id');
         });
     }

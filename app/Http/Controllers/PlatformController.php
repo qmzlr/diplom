@@ -33,6 +33,7 @@ class PlatformController extends Controller
             ->map(fn (UserVideo $video) => $video->toFrontend());
 
         $comments = PlatformComment::query()
+            ->with(['course', 'lesson.course', 'video'])
             ->latest()
             ->get()
             ->map(fn (PlatformComment $comment) => $comment->toFrontend());

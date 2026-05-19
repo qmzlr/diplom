@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Course;
 use App\Models\CourseEnrollment;
+use App\Models\CourseRequest;
+use App\Models\EmailVerificationCode;
 use App\Models\Instrument;
 use App\Models\Lesson;
 use App\Models\LessonProgress;
@@ -12,6 +14,7 @@ use App\Models\User;
 use App\Models\UserVideo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -166,9 +169,12 @@ class PlatformAccessTest extends TestCase
             'course_count' => 1,
         ]);
 
+        $this->createVerificationCode('new@example.com');
+
         $response = $this->postJson('/register', [
             'name' => 'Student',
             'email' => 'new@example.com',
+            'emailVerificationCode' => '123456',
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
             'instrumentIds' => ['guitar', 'piano'],
@@ -195,9 +201,12 @@ class PlatformAccessTest extends TestCase
             'course_count' => 1,
         ]);
 
+        $this->createVerificationCode('teacher@example.com');
+
         $response = $this->postJson('/register', [
             'name' => 'Teacher',
             'email' => 'teacher@example.com',
+            'emailVerificationCode' => '123456',
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
             'accountType' => 'teacher',
@@ -811,6 +820,177 @@ class PlatformAccessTest extends TestCase
             );
     }
 
+    public function test_user_delete_cascades_owned_and_personal_records(): void
+    {
+        $user = $this->user('teacher', 'cascade-teacher@example.com');
+        $instrument = Instrument::query()->create([
+            'slug' => 'guitar',
+            'name' => 'Гитара',
+            'image' => '/images/course-guitar.jpg',
+            'description' => 'Instrument',
+            'course_count' => 1,
+        ]);
+        $course = Course::query()->create([
+            ...$this->coursePayload(),
+            'user_id' => $user->id,
+        ]);
+        $lesson = Lesson::query()->create($this->lessonPayload($course, 'lesson-1', 1));
+        $video = UserVideo::query()->create([
+            'userId' => $user->id,
+            'title' => 'Practice',
+            'description' => 'Video',
+            'instrument' => 'Гитара',
+            'status' => 'опубликовано',
+            'image' => '/images/course-guitar.jpg',
+        ]);
+        $comment = PlatformComment::query()->create([
+            'userId' => $user->id,
+            'author' => 'Teacher',
+            'text' => 'Text',
+            'target' => 'Practice',
+            'target_type' => 'video',
+            'target_code' => (string) $video->id,
+            'status' => 'одобрено',
+        ]);
+        CourseEnrollment::query()->create([
+            'userId' => $user->id,
+            'course_id' => $course->id,
+            'startedAt' => now(),
+        ]);
+        LessonProgress::query()->create([
+            'userId' => $user->id,
+            'lesson_id' => $lesson->id,
+            'completed' => true,
+            'completedAt' => now(),
+        ]);
+        CourseRequest::query()->create([
+            'userId' => $user->id,
+            'name' => 'Teacher',
+            'email' => 'cascade-teacher@example.com',
+            'instrument' => 'Гитара',
+            'level' => 'Начинающий',
+            'goal' => 'Играть песни',
+        ]);
+        $user->instruments()->attach($instrument->id);
+
+        $user->delete();
+
+        $this->assertDatabaseMissing('users', ['id' => $user->id]);
+        $this->assertDatabaseMissing('courses', ['id' => $course->id]);
+        $this->assertDatabaseMissing('lessons', ['id' => $lesson->id]);
+        $this->assertDatabaseMissing('course_enrollments', ['userId' => $user->id]);
+        $this->assertDatabaseMissing('lesson_progress', ['userId' => $user->id]);
+        $this->assertDatabaseMissing('user_instruments', ['userId' => $user->id]);
+        $this->assertDatabaseMissing('user_videos', ['id' => $video->id]);
+        $this->assertDatabaseMissing('platform_comments', ['id' => $comment->id]);
+        $this->assertDatabaseMissing('course_requests', ['userId' => $user->id]);
+    }
+
+    public function test_course_delete_cascades_lessons_progress_enrollments_and_comments(): void
+    {
+        $user = $this->user('user', 'course-cascade@example.com');
+        $course = Course::query()->create($this->coursePayload());
+        $lesson = Lesson::query()->create($this->lessonPayload($course, 'lesson-1', 1));
+        $courseComment = PlatformComment::query()->create([
+            'author' => 'Student',
+            'text' => 'Course comment',
+            'target' => 'Test Course',
+            'target_type' => 'course',
+            'target_code' => $course->code,
+            'status' => 'одобрено',
+        ]);
+        $lessonComment = PlatformComment::query()->create([
+            'author' => 'Student',
+            'text' => 'Lesson comment',
+            'target' => 'Lesson 1',
+            'target_type' => 'lesson',
+            'target_code' => $lesson->code,
+            'status' => 'одобрено',
+        ]);
+        CourseEnrollment::query()->create([
+            'userId' => $user->id,
+            'course_id' => $course->id,
+            'startedAt' => now(),
+        ]);
+        LessonProgress::query()->create([
+            'userId' => $user->id,
+            'lesson_id' => $lesson->id,
+            'completed' => true,
+            'completedAt' => now(),
+        ]);
+
+        $course->delete();
+
+        $this->assertDatabaseMissing('courses', ['id' => $course->id]);
+        $this->assertDatabaseMissing('lessons', ['id' => $lesson->id]);
+        $this->assertDatabaseMissing('course_enrollments', ['course_id' => $course->id]);
+        $this->assertDatabaseMissing('lesson_progress', ['lesson_id' => $lesson->id]);
+        $this->assertDatabaseMissing('platform_comments', ['id' => $courseComment->id]);
+        $this->assertDatabaseMissing('platform_comments', ['id' => $lessonComment->id]);
+    }
+
+    public function test_legacy_comment_targets_populate_explicit_foreign_keys(): void
+    {
+        $course = Course::query()->create($this->coursePayload());
+        $lesson = Lesson::query()->create($this->lessonPayload($course, 'lesson-1', 1));
+        $video = UserVideo::query()->create([
+            'title' => 'Practice',
+            'description' => 'Video',
+            'instrument' => 'Гитара',
+            'status' => 'опубликовано',
+            'image' => '/images/course-guitar.jpg',
+        ]);
+
+        $courseComment = PlatformComment::query()->create([
+            'author' => 'Student',
+            'text' => 'Course comment',
+            'target' => 'Test Course',
+            'target_type' => 'course',
+            'target_code' => $course->code,
+            'status' => 'одобрено',
+        ]);
+        $lessonComment = PlatformComment::query()->create([
+            'author' => 'Student',
+            'text' => 'Lesson comment',
+            'target' => 'Lesson 1',
+            'target_type' => 'lesson',
+            'target_code' => $lesson->code,
+            'status' => 'одобрено',
+        ]);
+        $videoComment = PlatformComment::query()->create([
+            'author' => 'Student',
+            'text' => 'Video comment',
+            'target' => 'Practice',
+            'target_type' => 'video',
+            'target_code' => (string) $video->id,
+            'status' => 'одобрено',
+        ]);
+
+        $this->assertDatabaseHas('platform_comments', ['id' => $courseComment->id, 'course_id' => $course->id]);
+        $this->assertDatabaseHas('platform_comments', ['id' => $lessonComment->id, 'lesson_id' => $lesson->id]);
+        $this->assertDatabaseHas('platform_comments', ['id' => $videoComment->id, 'user_video_id' => $video->id]);
+    }
+
+    public function test_generic_course_and_other_course_request_allow_nullable_instrument_relation(): void
+    {
+        $course = Course::query()->create([
+            ...$this->coursePayload(),
+            'instrument' => 'Любой инструмент',
+        ]);
+
+        $this->postJson('/course-requests', [
+            'name' => 'Student',
+            'email' => 'student@example.com',
+            'instrument' => 'Другое',
+            'level' => 'Новичок',
+            'goal' => 'Играть песни',
+            'privacyConsent' => true,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('courses', ['id' => $course->id, 'instrument_id' => null]);
+        $this->assertDatabaseHas('course_requests', ['email' => 'student@example.com', 'instrument' => 'Другое', 'instrument_id' => null]);
+    }
+
     private function user(string $role, string $email = 'student@example.com'): User
     {
         return User::query()->create([
@@ -885,5 +1065,15 @@ class PlatformAccessTest extends TestCase
             'video' => '/videos/spatial.mp4',
             'position' => $position,
         ];
+    }
+
+    private function createVerificationCode(string $email): void
+    {
+        EmailVerificationCode::query()->create([
+            'email' => mb_strtolower($email),
+            'purpose' => 'registration',
+            'code_hash' => Hash::make('123456'),
+            'expires_at' => now()->addMinutes(15),
+        ]);
     }
 }

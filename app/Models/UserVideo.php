@@ -4,11 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class UserVideo extends Model
 {
     protected $fillable = [
         'userId',
+        'instrument_id',
         'title',
         'description',
         'instrument',
@@ -16,6 +18,15 @@ class UserVideo extends Model
         'image',
         'video',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (UserVideo $video): void {
+            if ($video->instrument_id === null && $video->instrument) {
+                $video->instrument_id = Instrument::query()->where('name', $video->instrument)->value('id');
+            }
+        });
+    }
 
     public function toFrontend(): array
     {
@@ -36,5 +47,15 @@ class UserVideo extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'userId');
+    }
+
+    public function instrumentModel(): BelongsTo
+    {
+        return $this->belongsTo(Instrument::class, 'instrument_id');
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(PlatformComment::class);
     }
 }

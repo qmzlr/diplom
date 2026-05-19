@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Instrument;
 use App\Models\UserVideo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,6 +36,7 @@ class UserVideoController extends Controller
         $video = UserVideo::query()->create([
             ...$validated,
             'userId' => $request->session()->get('user_id'),
+            'instrument_id' => Instrument::query()->where('name', $validated['instrument'])->value('id'),
             'image' => $validated['image'] ?? '/images/course-theory.jpg',
             'video' => '/storage/'.$videoPath,
             'status' => 'на модерации',

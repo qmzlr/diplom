@@ -13,6 +13,7 @@ class Course extends Model
         'code',
         'user_id',
         'status',
+        'instrument_id',
         'title',
         'author',
         'category',
@@ -41,6 +42,15 @@ class Course extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::saving(function (Course $course): void {
+            if ($course->instrument_id === null && $course->instrument && $course->instrument !== 'Любой инструмент') {
+                $course->instrument_id = Instrument::query()->where('name', $course->instrument)->value('id');
+            }
+        });
+    }
+
     public function lessonList(): HasMany
     {
         return $this->hasMany(Lesson::class)->orderBy('position');
@@ -51,9 +61,19 @@ class Course extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function instrumentModel(): BelongsTo
+    {
+        return $this->belongsTo(Instrument::class, 'instrument_id');
+    }
+
     public function enrollments(): HasMany
     {
         return $this->hasMany(CourseEnrollment::class);
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(PlatformComment::class);
     }
 
     public function toFrontend(bool $withLessons = true, ?int $userId = null): array

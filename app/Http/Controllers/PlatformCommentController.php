@@ -19,6 +19,7 @@ class PlatformCommentController extends Controller
     {
         return response()->json([
             'comments' => PlatformComment::query()
+                ->with(['course', 'lesson.course', 'video'])
                 ->latest()
                 ->get()
                 ->map(fn (PlatformComment $comment) => $comment->toFrontend()),
@@ -45,6 +46,9 @@ class PlatformCommentController extends Controller
             'target' => $target['label'],
             'target_type' => $validated['targetType'],
             'target_code' => $target['code'],
+            'course_id' => $target['course_id'] ?? null,
+            'lesson_id' => $target['lesson_id'] ?? null,
+            'user_video_id' => $target['user_video_id'] ?? null,
             'status' => 'ожидает',
         ]);
 
@@ -82,7 +86,7 @@ class PlatformCommentController extends Controller
     }
 
     /**
-     * @return array{label: string, code: string}
+     * @return array{label: string, code: string, course_id?: int, lesson_id?: int, user_video_id?: int}
      */
     private function resolveTarget(string $type, string $code, User $user): array
     {
@@ -95,7 +99,7 @@ class PlatformCommentController extends Controller
 
             abort_if(! $isEnrolled, 403);
 
-            return ['label' => $course->title, 'code' => $course->code];
+            return ['label' => $course->title, 'code' => $course->code, 'course_id' => $course->id];
         }
 
         if ($type === 'lesson') {
@@ -112,6 +116,7 @@ class PlatformCommentController extends Controller
             return [
                 'label' => ($lesson->course?->title ?? 'Курс').' · '.$lesson->title,
                 'code' => $lesson->code,
+                'lesson_id' => $lesson->id,
             ];
         }
 
@@ -120,7 +125,7 @@ class PlatformCommentController extends Controller
                 ->where('status', 'опубликовано')
                 ->findOrFail((int) $code);
 
-            return ['label' => $video->title, 'code' => (string) $video->id];
+            return ['label' => $video->title, 'code' => (string) $video->id, 'user_video_id' => $video->id];
         }
 
         return ['label' => 'PlayNote', 'code' => 'platform'];

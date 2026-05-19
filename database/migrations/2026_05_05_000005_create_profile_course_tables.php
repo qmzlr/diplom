@@ -21,6 +21,7 @@ return new class extends Migration
 
             $table->unique(['userId', 'course_id']);
             $table->index('userId');
+            $table->foreign('userId')->references('id')->on('users')->cascadeOnDelete();
         });
 
         Schema::create('user_instruments', function (Blueprint $table) {
@@ -31,6 +32,7 @@ return new class extends Migration
 
             $table->unique(['userId', 'instrument_id']);
             $table->index('userId');
+            $table->foreign('userId')->references('id')->on('users')->cascadeOnDelete();
         });
 
         Course::query()

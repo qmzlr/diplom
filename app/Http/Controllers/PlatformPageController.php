@@ -47,9 +47,9 @@ class PlatformPageController extends Controller
                 ->values()
                 ->all(),
             'comments' => PlatformComment::query()
+                ->with(['course', 'lesson.course', 'video'])
                 ->where('status', 'одобрено')
-                ->where('target_type', 'course')
-                ->where('target_code', $course->code)
+                ->where('course_id', $course->id)
                 ->latest()
                 ->get()
                 ->map(fn (PlatformComment $comment) => $comment->toFrontend()),
@@ -75,8 +75,8 @@ class PlatformPageController extends Controller
             'course' => $course->toFrontend(true, $user?->id),
             'lessonId' => $lesson->code,
             'comments' => PlatformComment::query()
-                ->where('target_type', 'lesson')
-                ->where('target_code', $lesson->code)
+                ->with(['course', 'lesson.course', 'video'])
+                ->where('lesson_id', $lesson->id)
                 ->where('status', 'одобрено')
                 ->latest()
                 ->get()
@@ -148,9 +148,9 @@ class PlatformPageController extends Controller
         return Inertia::render('CommunityVideo', [
             'video' => $userVideo->toFrontend(),
             'comments' => PlatformComment::query()
+                ->with(['course', 'lesson.course', 'video'])
                 ->where('status', 'одобрено')
-                ->where('target_type', 'video')
-                ->where('target_code', (string) $userVideo->id)
+                ->where('user_video_id', $userVideo->id)
                 ->latest()
                 ->get()
                 ->map(fn (PlatformComment $comment) => $comment->toFrontend()),
@@ -162,6 +162,7 @@ class PlatformPageController extends Controller
     {
         return Inertia::render('Moderator', [
             'comments' => PlatformComment::query()
+                ->with(['course', 'lesson.course', 'video'])
                 ->latest()
                 ->get()
                 ->map(fn (PlatformComment $comment) => $comment->toFrontend()),
@@ -307,35 +308,35 @@ class PlatformPageController extends Controller
 
     private function recommendationsFor(User $user, $selectedInstruments, array $enrolledCourseIds): array
     {
-        $instrumentNames = $selectedInstruments->pluck('name')->all();
+        $instrumentIds = $selectedInstruments->pluck('id')->all();
 
         return Course::query()
             ->with('lessonList')
             ->where('status', 'опубликовано')
             ->whereNotIn('id', $enrolledCourseIds)
             ->get()
-            ->sort(function (Course $first, Course $second) use ($user, $instrumentNames): int {
-                $scoreComparison = $this->recommendationScore($second, $user, $instrumentNames) <=> $this->recommendationScore($first, $user, $instrumentNames);
+            ->sort(function (Course $first, Course $second) use ($user, $instrumentIds): int {
+                $scoreComparison = $this->recommendationScore($second, $user, $instrumentIds) <=> $this->recommendationScore($first, $user, $instrumentIds);
 
                 return $scoreComparison !== 0 ? $scoreComparison : strcmp($first->code, $second->code);
             })
-            ->filter(fn (Course $course) => $this->recommendationScore($course, $user, $instrumentNames) > 0)
+            ->filter(fn (Course $course) => $this->recommendationScore($course, $user, $instrumentIds) > 0)
             ->take(6)
-            ->map(function (Course $course) use ($user, $instrumentNames): array {
+            ->map(function (Course $course) use ($user, $instrumentIds): array {
                 return [
                     ...$course->toFrontend(true, $user->id),
-                    'reason' => $this->recommendationReason($course, $user, $instrumentNames),
+                    'reason' => $this->recommendationReason($course, $user, $instrumentIds),
                 ];
             })
             ->values()
             ->all();
     }
 
-    private function recommendationScore(Course $course, User $user, array $instrumentNames): int
+    private function recommendationScore(Course $course, User $user, array $instrumentIds): int
     {
         $score = 0;
 
-        if (in_array($course->instrument, $instrumentNames, true)) {
+        if ($course->instrument_id !== null && in_array($course->instrument_id, $instrumentIds, true)) {
             $score += 4;
         }
 
@@ -350,11 +351,11 @@ class PlatformPageController extends Controller
         return $score;
     }
 
-    private function recommendationReason(Course $course, User $user, array $instrumentNames): string
+    private function recommendationReason(Course $course, User $user, array $instrumentIds): string
     {
         $levelMatches = $user->level && $course->level === $user->level;
 
-        $instrumentMatches = in_array($course->instrument, $instrumentNames, true);
+        $instrumentMatches = $course->instrument_id !== null && in_array($course->instrument_id, $instrumentIds, true);
 
         if ($instrumentMatches && $levelMatches) {
             return 'по инструменту и уровню';

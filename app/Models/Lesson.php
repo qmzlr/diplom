@@ -36,6 +36,11 @@ class Lesson extends Model
         return $this->hasMany(LessonProgress::class);
     }
 
+    public function comments(): HasMany
+    {
+        return $this->hasMany(PlatformComment::class);
+    }
+
     public function toFrontend(?bool $completed = null): array
     {
         return [

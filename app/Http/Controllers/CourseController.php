@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\Instrument;
 use App\Models\Lesson;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -128,6 +129,7 @@ class CourseController extends Controller
             'code' => $payload['id'],
             'user_id' => $existing?->user_id ?? ($isTeacher ? $user?->id : null),
             'status' => $isTeacher ? 'на модерации' : ($existing?->status ?? 'опубликовано'),
+            'instrument_id' => $this->instrumentIdFor($payload['instrument']),
             'title' => $payload['title'],
             'author' => $payload['author'],
             'category' => $payload['category'],
@@ -186,5 +188,14 @@ class CourseController extends Controller
         if ($course) {
             abort_if((int) $course->user_id !== (int) $user->id, 403);
         }
+    }
+
+    private function instrumentIdFor(string $name): ?int
+    {
+        if ($name === 'Любой инструмент') {
+            return null;
+        }
+
+        return Instrument::query()->where('name', $name)->value('id');
     }
 }

@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('author');
             $table->string('category');
             $table->string('instrument');
+            $table->foreignId('instrument_id')->nullable()->constrained('instruments')->nullOnDelete();
             $table->string('image');
             $table->string('tagline');
             $table->text('short_description');
@@ -62,12 +63,14 @@ return new class extends Migration
             $table->string('title');
             $table->text('description')->nullable();
             $table->string('instrument');
+            $table->foreignId('instrument_id')->nullable()->constrained('instruments')->nullOnDelete();
             $table->enum('status', ['опубликовано', 'на модерации', 'отклонено'])->default('на модерации');
             $table->string('image');
             $table->string('video')->nullable();
             $table->timestamps();
 
             $table->index('userId');
+            $table->foreign('userId')->references('id')->on('users')->cascadeOnDelete();
         });
 
         Schema::create('platform_comments', function (Blueprint $table) {
@@ -77,9 +80,16 @@ return new class extends Migration
             $table->text('text');
             $table->string('target');
             $table->enum('status', ['ожидает', 'одобрено', 'отклонено'])->default('ожидает');
+            $table->foreignId('course_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignId('lesson_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignId('user_video_id')->nullable()->constrained('user_videos')->cascadeOnDelete();
             $table->timestamps();
 
             $table->index('userId');
+            $table->index(['status', 'course_id']);
+            $table->index(['status', 'lesson_id']);
+            $table->index(['status', 'user_video_id']);
+            $table->foreign('userId')->references('id')->on('users')->cascadeOnDelete();
         });
     }
 

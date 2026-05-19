@@ -58,6 +58,26 @@ class User extends Model
         return $this->hasMany(CourseEnrollment::class, 'userId');
     }
 
+    public function lessonProgress(): HasMany
+    {
+        return $this->hasMany(LessonProgress::class, 'userId');
+    }
+
+    public function videos(): HasMany
+    {
+        return $this->hasMany(UserVideo::class, 'userId');
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(PlatformComment::class, 'userId');
+    }
+
+    public function courseRequests(): HasMany
+    {
+        return $this->hasMany(CourseRequest::class, 'userId');
+    }
+
     public function courses(): HasMany
     {
         return $this->hasMany(Course::class);

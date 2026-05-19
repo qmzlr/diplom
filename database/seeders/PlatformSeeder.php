@@ -31,6 +31,8 @@ class PlatformSeeder extends Seeder
             );
         }
 
+        $instrumentIdsByName = Instrument::query()->pluck('id', 'name');
+
         $courses = [
             [
                 'code' => '01',
@@ -169,7 +171,10 @@ class PlatformSeeder extends Seeder
 
             $course = Course::query()->updateOrCreate(
                 ['code' => $courseData['code']],
-                $courseData,
+                [
+                    ...$courseData,
+                    'instrument_id' => $instrumentIdsByName[$courseData['instrument']] ?? null,
+                ],
             );
 
             $course->lessonList()->delete();
@@ -216,6 +221,7 @@ class PlatformSeeder extends Seeder
                 ['title' => $video['title']],
                 [
                     ...$video,
+                    'instrument_id' => $instrumentIdsByName[$video['instrument']] ?? null,
                     'video' => $lessonVideos[$index % count($lessonVideos)],
                 ],
             );
@@ -228,9 +234,14 @@ class PlatformSeeder extends Seeder
         ];
 
         foreach ($comments as $comment) {
+            $courseId = Course::query()->where('code', $comment['target_code'])->value('id');
+
             PlatformComment::query()->updateOrCreate(
                 ['author' => $comment['author'], 'target' => $comment['target']],
-                $comment,
+                [
+                    ...$comment,
+                    'course_id' => $courseId,
+                ],
             );
         }
     }

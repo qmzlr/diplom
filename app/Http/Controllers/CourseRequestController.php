@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CourseRequest;
+use App\Models\Instrument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -22,6 +23,7 @@ class CourseRequestController extends Controller
         $courseRequest = CourseRequest::query()->create([
             ...collect($validated)->except('privacyConsent')->all(),
             'userId' => $request->session()->get('user_id'),
+            'instrument_id' => Instrument::query()->where('name', $validated['instrument'])->value('id'),
         ]);
 
         return response()->json([

@@ -20,6 +20,7 @@ return new class extends Migration
             $table->timestamp('createdAt')->useCurrent();
 
             $table->index('userId');
+            $table->foreign('userId')->references('id')->on('users')->cascadeOnDelete();
         });
     }
 

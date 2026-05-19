@@ -18,6 +18,7 @@ return new class extends Migration
 
             $table->unique(['userId', 'lesson_id']);
             $table->index('userId');
+            $table->foreign('userId')->references('id')->on('users')->cascadeOnDelete();
         });
     }
 
