@@ -46,6 +46,10 @@ export default function CourseEditor({ course, instruments, workspace = 'admin' 
     setForm((current) => ({ ...current, [field]: value }))
   }
 
+  const updateLines = (field: 'description' | 'features' | 'outcomes', value: string) => {
+    setForm((current) => ({ ...current, [field]: value.split('\n') }))
+  }
+
   const updateLesson = (id: string, field: keyof Lesson, value: string) => {
     setLessons((items) => items.map((lesson) => lesson.id === id ? { ...lesson, [field]: value } : lesson))
   }
@@ -186,9 +190,9 @@ export default function CourseEditor({ course, instruments, workspace = 'admin' 
           </FieldLabel>
           <FieldLabel label="Подзаголовок"><input className="pn-input" value={form.tagline} onChange={(e) => update('tagline', e.target.value)} required /></FieldLabel>
           <FieldLabel label="Короткое описание"><textarea className="pn-textarea" value={form.shortDescription} onChange={(e) => update('shortDescription', e.target.value)} required /></FieldLabel>
-          <FieldLabel label="Описание курса"><textarea className="pn-textarea" value={form.description.join('\n')} onChange={(e) => update('description', e.target.value)} required /></FieldLabel>
-          <FieldLabel label="Особенности"><textarea className="pn-textarea" value={form.features.join('\n')} onChange={(e) => update('features', e.target.value)} required /></FieldLabel>
-          <FieldLabel label="Результаты обучения"><textarea className="pn-textarea" value={form.outcomes.join('\n')} onChange={(e) => update('outcomes', e.target.value)} required /></FieldLabel>
+          <FieldLabel label="Описание курса"><textarea className="pn-textarea" value={form.description.join('\n')} onChange={(e) => updateLines('description', e.target.value)} required /></FieldLabel>
+          <FieldLabel label="Особенности"><textarea className="pn-textarea" value={form.features.join('\n')} onChange={(e) => updateLines('features', e.target.value)} required /></FieldLabel>
+          <FieldLabel label="Результаты обучения"><textarea className="pn-textarea" value={form.outcomes.join('\n')} onChange={(e) => updateLines('outcomes', e.target.value)} required /></FieldLabel>
           <FieldLabel label="Инструмент">
             <select className="pn-select" value={form.instrument} onChange={(e) => update('instrument', e.target.value)} required>
               {instruments.map((item) => <option key={item.id}>{item.name}</option>)}
