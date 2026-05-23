@@ -101,14 +101,14 @@ class LocalAuthController extends Controller
         $validated = $request->validate([
             'email' => ['required', 'email', 'max:320', 'unique:users,email'],
         ], [
-            'email.unique' => 'Аккаунт с таким email уже существует.',
+            'email.unique' => 'Пользователь с таким email уже зарегистрирован.',
         ]);
 
         $this->sendCode(
             $this->normalizeEmail($validated['email']),
             'registration',
             'Подтверждение регистрации',
-            'Введите этот код на странице регистрации, чтобы подтвердить email и создать аккаунт.'
+            'Введите этот код на странице регистрации, чтобы завершить создание аккаунта.'
         );
 
         return response()->json([

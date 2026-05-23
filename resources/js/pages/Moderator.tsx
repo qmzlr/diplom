@@ -11,7 +11,8 @@ type QueueItem =
   | { kind: 'teacher'; id: string; status: TeacherApplication['status']; title: string; meta: string; text: string; source: TeacherApplication }
   | { kind: 'course'; id: string; status: NonNullable<Course['status']>; title: string; meta: string; text: string; source: Course }
 
-const tabs = ['Все', 'Ожидают', 'Видео', 'Комментарии', 'Учителя', 'Курсы'] as const
+type ModeratorTab = 'Все' | 'Ожидают' | 'Видео' | 'Комментарии' | 'Учителя' | 'Курсы'
+
 const statusLabels = ['Все статусы', 'ожидает', 'на модерации', 'одобрено', 'одобрен', 'опубликовано', 'отклонено', 'отклонён'] as const
 const pageSize = 8
 const workModes = [
@@ -37,7 +38,7 @@ export default function Moderator({
   const [items, setItems] = useState(comments)
   const [teachers, setTeachers] = useState(teacherApplications)
   const [courses, setCourses] = useState(courseSubmissions)
-  const [tab, setTab] = useState<(typeof tabs)[number] | null>(null)
+  const [tab, setTab] = useState<ModeratorTab | null>(null)
   const [status, setStatus] = useState<(typeof statusLabels)[number]>('Все статусы')
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)

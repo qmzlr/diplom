@@ -11,10 +11,10 @@ export default function Register({ instruments }: { instruments: Instrument[] })
   const [agreed, setAgreed] = useState(false)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [passwordConfirmation, setPasswordConfirmation] = useState('')
   const [emailVerificationCode, setEmailVerificationCode] = useState('')
   const [isCodeSent, setIsCodeSent] = useState(false)
+  const [password, setPassword] = useState('')
+  const [passwordConfirmation, setPasswordConfirmation] = useState('')
   const [teacherDocuments, setTeacherDocuments] = useState<File[]>([])
   const [selectedIds, setSelectedIds] = useState(() => new Set(instruments[0]?.id ? [instruments[0].id] : []))
   const [level, setLevel] = useState('Начинающий')
@@ -54,10 +54,15 @@ export default function Register({ instruments }: { instruments: Instrument[] })
             setMessage('')
 
             try {
+              if (password !== passwordConfirmation) {
+                setMessage('Пароли не совпадают.')
+                return
+              }
+
               if (!isCodeSent) {
                 await postJson('/register/email-code', { email })
                 setIsCodeSent(true)
-                setMessage('Мы отправили код подтверждения на вашу почту. Введите его ниже и завершите регистрацию.')
+                setMessage('Код подтверждения отправлен на почту. Введите его, чтобы завершить регистрацию.')
                 return
               }
 
@@ -124,6 +129,7 @@ export default function Register({ instruments }: { instruments: Instrument[] })
               className="pn-input"
               inputMode="numeric"
               maxLength={6}
+              pattern="[0-9]{6}"
               value={emailVerificationCode}
               onChange={(e) => setEmailVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
               placeholder="Код из письма"
@@ -183,8 +189,29 @@ export default function Register({ instruments }: { instruments: Instrument[] })
             </span>
           </label>
           <button className="pn-button is-dark" disabled={!agreed || isSubmitting}>
-            {isSubmitting ? 'Проверяем...' : isCodeSent ? 'Создать аккаунт' : 'Получить код'}
+            {isSubmitting ? (isCodeSent ? 'Создаем...' : 'Отправляем...') : isCodeSent ? 'Создать аккаунт' : 'Получить код'}
           </button>
+          {isCodeSent && (
+            <button
+              type="button"
+              className="auth-link"
+              disabled={isSubmitting}
+              onClick={async () => {
+                setIsSubmitting(true)
+                setMessage('')
+                try {
+                  await postJson('/register/email-code', { email })
+                  setMessage('Новый код подтверждения отправлен на почту.')
+                } catch (error) {
+                  setMessage(error instanceof Error ? error.message : 'Не удалось отправить код.')
+                } finally {
+                  setIsSubmitting(false)
+                }
+              }}
+            >
+              Отправить код еще раз
+            </button>
+          )}
           <button type="button" className="auth-link" onClick={() => router.visit('/login')}>Уже есть аккаунт?</button>
           {message && <p className="pn-text">{message}</p>}
         </form>

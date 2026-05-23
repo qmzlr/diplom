@@ -24,5 +24,12 @@ export default defineConfig({
   },
   build: {
     cssMinify: false,
+    rollupOptions: {
+      output: {
+        entryFileNames: 'assets/[name]-[hash]-tw2.js',
+        chunkFileNames: 'assets/[name]-[hash]-tw2.js',
+        assetFileNames: 'assets/[name]-[hash]-tw2.[ext]',
+      },
+    },
   },
 })

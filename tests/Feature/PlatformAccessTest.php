@@ -215,6 +215,26 @@ class PlatformAccessTest extends TestCase
         $this->assertDatabaseHas('user_instruments', ['userId' => $userId, 'instrument_id' => $piano->id]);
     }
 
+    public function test_registration_email_code_can_be_requested_for_new_email_only(): void
+    {
+        $this->user('user', 'taken@example.com');
+
+        $this->postJson('/register/email-code', [
+            'email' => 'new@example.com',
+        ])->assertOk()
+            ->assertJsonPath('success', true);
+
+        $this->assertDatabaseHas('email_verification_codes', [
+            'email' => 'new@example.com',
+            'purpose' => 'registration',
+            'consumed_at' => null,
+        ]);
+
+        $this->postJson('/register/email-code', [
+            'email' => 'taken@example.com',
+        ])->assertJsonValidationErrors('email');
+    }
+
     public function test_teacher_registration_creates_pending_teacher_application(): void
     {
         $guitar = Instrument::query()->create([
