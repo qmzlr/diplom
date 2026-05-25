@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { router } from '@inertiajs/react'
 import { useAuth } from '@/hooks/useAuth'
 import { postJson } from '@/lib/http'
 
 export default function Hero() {
+  const { user } = useAuth()
   const [submitHovered, setSubmitHovered] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -16,17 +17,11 @@ export default function Hero() {
     goal: 'Играть песни',
   })
 
-  const { user } = useAuth()
-
-  useEffect(() => {
-    if (user) {
-      setFormData((prev) => ({
-        ...prev,
-        name: user.name || prev.name,
-        email: user.email || prev.email,
-      }))
-    }
-  }, [user])
+  const resolvedFormData = {
+    ...formData,
+    name: formData.name || user?.name || '',
+    email: formData.email || user?.email || '',
+  }
 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -38,15 +33,15 @@ export default function Hero() {
     e.preventDefault()
     setSubmitError(null)
 
-    if (!formData.name || !formData.email || !privacyConsent) {
+    if (!resolvedFormData.name || !resolvedFormData.email || !privacyConsent) {
       setSubmitError('Заполните обязательные поля и подтвердите согласие с политикой конфиденциальности.')
       return
     }
 
     setIsSubmitting(true)
     postJson<{ success: boolean }>('/course-requests', {
-      name: formData.name,
-      email: formData.email,
+      name: resolvedFormData.name,
+      email: resolvedFormData.email,
       instrument: formData.instrument,
       level: formData.level,
       goal: formData.goal,
@@ -217,8 +212,8 @@ export default function Hero() {
                   {submitError}
                 </div>
               )}
-              <Field label="Имя" type="text" name="name" placeholder="Иван Иванов" value={formData.name} onChange={handleChange} />
-              <Field label="Email" type="email" name="email" placeholder="you@domain.com" value={formData.email} onChange={handleChange} />
+              <Field label="Имя" type="text" name="name" placeholder="Иван Иванов" value={resolvedFormData.name} onChange={handleChange} />
+              <Field label="Email" type="email" name="email" placeholder="you@domain.com" value={resolvedFormData.email} onChange={handleChange} />
               <SelectField
                 label="Выберите инструмент"
                 name="instrument"

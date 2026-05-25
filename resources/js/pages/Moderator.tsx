@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { router } from '@inertiajs/react'
 import { AppShell, PageHero, SectionTitle } from '@/components/AppShell'
 import type { CommentItem, Course, TeacherApplication, UserVideo } from '@/data/courses'
@@ -101,9 +101,20 @@ export default function Moderator({
   const currentPage = Math.min(page, pageCount)
   const visibleItems = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
-  useEffect(() => {
+  const selectTab = (nextTab: ModeratorTab | null) => {
+    setTab(nextTab)
     setPage(1)
-  }, [tab, status, query])
+  }
+
+  const selectStatus = (nextStatus: (typeof statusLabels)[number]) => {
+    setStatus(nextStatus)
+    setPage(1)
+  }
+
+  const search = (nextQuery: string) => {
+    setQuery(nextQuery)
+    setPage(1)
+  }
 
   const stats = {
     pending: queue.filter((item) => item.status === 'ожидает' || item.status === 'на модерации').length,
@@ -156,7 +167,7 @@ export default function Moderator({
           {!tab ? (
             <div className="admin-choice-grid moderator-choice-grid">
               {workModes.map(([title, text, nextTab]) => (
-                <button className="pn-card pn-card-body admin-choice-card" key={title} onClick={() => setTab(nextTab)}>
+                <button className="pn-card pn-card-body admin-choice-card" key={title} onClick={() => selectTab(nextTab)}>
                   <div className="pn-meta">Рабочий режим</div>
                   <strong>{title}</strong>
                   <span>{text}</span>
@@ -166,9 +177,9 @@ export default function Moderator({
           ) : (
             <>
               <div className="moderator-toolbar">
-                <button className="pn-button" onClick={() => { setTab(null); setQuery(''); setStatus('Все статусы') }}>Назад к выбору</button>
-                <input className="pn-input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Поиск по автору, названию или тексту" />
-                <select className="pn-select" value={status} onChange={(event) => setStatus(event.target.value as (typeof statusLabels)[number])}>
+                <button className="pn-button" onClick={() => { selectTab(null); setQuery(''); setStatus('Все статусы') }}>Назад к выбору</button>
+                <input className="pn-input" value={query} onChange={(event) => search(event.target.value)} placeholder="Поиск по автору, названию или тексту" />
+                <select className="pn-select" value={status} onChange={(event) => selectStatus(event.target.value as (typeof statusLabels)[number])}>
                   {statusLabels.map((item) => <option key={item}>{item}</option>)}
                 </select>
               </div>

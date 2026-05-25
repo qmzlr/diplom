@@ -6,7 +6,9 @@ import { initialUploadProgress, UploadProgress } from '@/components/UploadProgre
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { CompletedLesson, Course, Instrument, UserVideo } from '@/data/courses'
 import { useAuth } from '@/hooks/useAuth'
-import { patchJson, uploadFormData, type UploadProgressState } from '@/lib/http'
+import { deleteJson, patchJson, uploadFormData, type UploadProgressState } from '@/lib/http'
+
+const profileCoursePageSize = 4
 
 export default function Dashboard({
   completedLessons,
@@ -23,7 +25,7 @@ export default function Dashboard({
   selectedInstruments: Instrument[]
   userVideos: UserVideo[]
 }) {
-  const { user, refresh } = useAuth()
+  const { user, refresh, logout } = useAuth({ redirectPath: '/' })
   const [name, setName] = useState(user?.name ?? '')
   const [email, setEmail] = useState(user?.email ?? '')
   const [level, setLevel] = useState(user?.level ?? 'Начинающий')
@@ -36,8 +38,16 @@ export default function Dashboard({
   const [avatarProgress, setAvatarProgress] = useState<UploadProgressState | null>(null)
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false)
   const [isLessonsDialogOpen, setIsLessonsDialogOpen] = useState(false)
+  const [coursePage, setCoursePage] = useState(1)
+  const [isDeletingProfile, setIsDeletingProfile] = useState(false)
 
   const currentCourses = courses
+  const coursePageCount = Math.max(1, Math.ceil(currentCourses.length / profileCoursePageSize))
+  const visibleCoursePage = Math.min(coursePage, coursePageCount)
+  const visibleCourses = currentCourses.slice(
+    (visibleCoursePage - 1) * profileCoursePageSize,
+    visibleCoursePage * profileCoursePageSize,
+  )
   const visibleCompletedLessons = completedLessons.slice(0, 5)
   const averageProgress = Math.round(
     currentCourses.length > 0 ? currentCourses.reduce((sum, course) => sum + course.progress, 0) / currentCourses.length : 0
@@ -107,6 +117,23 @@ export default function Dashboard({
     }
   }
 
+  const deleteProfile = async () => {
+    if (!window.confirm('Удалить профиль? Это действие нельзя отменить.')) {
+      return
+    }
+
+    setIsDeletingProfile(true)
+    setMessage('')
+
+    try {
+      await deleteJson<{ success: boolean }>('/api/profile')
+      router.visit('/')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Не удалось удалить профиль.')
+      setIsDeletingProfile(false)
+    }
+  }
+
   return (
     <AppShell>
       <PageHero
@@ -155,6 +182,12 @@ export default function Dashboard({
               <button className="pn-button" onClick={() => router.visit('/metronome')}>
                 Метроном
               </button>
+              <button className="pn-button" onClick={logout}>
+                Выйти
+              </button>
+              <button className="pn-button is-danger" onClick={deleteProfile} disabled={isDeletingProfile}>
+                {isDeletingProfile ? 'Удаляем...' : 'Удалить профиль'}
+              </button>
             </div>
           </aside>
 
@@ -168,7 +201,7 @@ export default function Dashboard({
             <section className="dashboard-section">
               <SectionTitle title="Текущие курсы" />
               <div className="dashboard-course-list">
-                {currentCourses.length > 0 ? currentCourses.map((course) => (
+                {currentCourses.length > 0 ? visibleCourses.map((course) => (
                   <button className="dashboard-course-row" key={course.id} onClick={() => router.visit(`/courses/${course.id}`)}>
                     <img src={course.img} alt={course.title} />
                     <span>
@@ -186,6 +219,9 @@ export default function Dashboard({
                   </article>
                 )}
               </div>
+              {currentCourses.length > profileCoursePageSize && (
+                <Pagination page={visibleCoursePage} pageCount={coursePageCount} onPage={setCoursePage} />
+              )}
             </section>
 
             <div className="dashboard-lower-grid">
@@ -310,5 +346,26 @@ function FieldLabel({ label, children }: { label: string; children: React.ReactN
       <span>{label}</span>
       {children}
     </label>
+  )
+}
+
+function Pagination({ page, pageCount, onPage }: { page: number; pageCount: number; onPage: (page: number) => void }) {
+  return (
+    <div className="table-pagination dashboard-course-pagination">
+      <button className="pn-button" disabled={page === 1} onClick={() => onPage(Math.max(1, page - 1))}>Назад</button>
+      <div className="pagination-pages">
+        {Array.from({ length: pageCount }, (_, index) => index + 1).map((pageNumber) => (
+          <button
+            className={`pagination-page ${pageNumber === page ? 'is-active' : ''}`}
+            key={pageNumber}
+            type="button"
+            onClick={() => onPage(pageNumber)}
+          >
+            {pageNumber}
+          </button>
+        ))}
+      </div>
+      <button className="pn-button" disabled={page === pageCount} onClick={() => onPage(Math.min(pageCount, page + 1))}>Далее</button>
+    </div>
   )
 }

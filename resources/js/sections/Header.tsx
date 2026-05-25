@@ -65,7 +65,7 @@ export default function Header({ forceLight = false }: HeaderProps) {
   }, [menuOpen])
 
   const overHero = overHeroRaw && !forceLight
-  const { user, isAuthenticated, logout } = useAuth({ redirectPath: '/' })
+  const { user, isAuthenticated } = useAuth({ redirectPath: '/' })
   const visibleNavItems = [
     ...navItems,
     ...(user?.role === 'teacher' ? [{ label: 'Учителю', target: '/teacher' }] : []),
@@ -161,16 +161,7 @@ export default function Header({ forceLight = false }: HeaderProps) {
               onClick={() => handleNavClick(item.target)}
             />
           ))}
-          {isAuthenticated && user ? (
-            <NavItem
-              label="Выйти"
-              overHero={overHero}
-              onClick={() => {
-                setMenuOpen(false)
-                logout()
-              }}
-            />
-          ) : (
+          {!isAuthenticated && (
             <NavItem
               label="Войти"
               overHero={overHero}

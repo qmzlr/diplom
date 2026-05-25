@@ -93,124 +93,147 @@ export default function Register({ instruments }: { instruments: Instrument[] })
         >
           <p className="pn-kicker">Регистрация</p>
           <h2>Создание аккаунта</h2>
-          <div className="account-type-toggle" aria-label="Тип аккаунта">
-            <button
-              className={accountType === 'student' ? 'is-active' : ''}
-              type="button"
-              onClick={() => setAccountType('student')}
-            >
-              Ученик
-            </button>
-            <button
-              className={accountType === 'teacher' ? 'is-active' : ''}
-              type="button"
-              onClick={() => setAccountType('teacher')}
-            >
-              Учитель
-            </button>
-          </div>
-          <input className="pn-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Имя" required />
-          <input
-            className="pn-input"
-            type="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value)
-              setIsCodeSent(false)
-              setEmailVerificationCode('')
-            }}
-            placeholder="Email"
-            required
-          />
-          <input className="pn-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Пароль" required />
-          <input className="pn-input" type="password" value={passwordConfirmation} onChange={(e) => setPasswordConfirmation(e.target.value)} placeholder="Подтверждение пароля" required />
-          {isCodeSent && (
-            <input
-              className="pn-input"
-              inputMode="numeric"
-              maxLength={6}
-              pattern="[0-9]{6}"
-              value={emailVerificationCode}
-              onChange={(e) => setEmailVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="Код из письма"
-              required
-            />
-          )}
-          <div className="pn-meta">{accountType === 'teacher' ? 'Инструменты преподавания' : 'Интересующие инструменты'}</div>
-          <div className="dashboard-chip-list profile-instrument-picker auth-instrument-picker" aria-label="Инструменты">
-            {instruments.map((instrument) => (
-              <label className={`dashboard-chip ${selectedIds.has(instrument.id) ? 'is-selected' : ''}`} key={instrument.id}>
-                <input
-                  type="checkbox"
-                  checked={selectedIds.has(instrument.id)}
-                  onChange={() => toggleInstrument(instrument.id)}
-                />
-                {instrument.name}
-              </label>
-            ))}
-          </div>
-          {accountType === 'student' ? (
-            <select className="pn-select" value={level} onChange={(e) => setLevel(e.target.value)}>
-              <option>Начинающий</option>
-              <option>Базовый</option>
-              <option>Средний</option>
-            </select>
+          {isCodeSent ? (
+            <div className="auth-code-step">
+              <div>
+                <div className="pn-meta">Подтверждение email</div>
+                <p className="pn-text">Код отправлен на {email}. Введите его, чтобы завершить регистрацию.</p>
+              </div>
+              <input
+                className="pn-input auth-code-input"
+                inputMode="numeric"
+                maxLength={6}
+                pattern="[0-9]{6}"
+                value={emailVerificationCode}
+                onChange={(e) => setEmailVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="Код из письма"
+                required
+                autoFocus
+              />
+            </div>
           ) : (
             <>
-              <label className="teacher-documents-field">
-                <span>Сертификаты, грамоты, дипломы</span>
+              <div className="account-type-toggle" aria-label="Тип аккаунта">
+                <button
+                  className={accountType === 'student' ? 'is-active' : ''}
+                  type="button"
+                  onClick={() => setAccountType('student')}
+                >
+                  Ученик
+                </button>
+                <button
+                  className={accountType === 'teacher' ? 'is-active' : ''}
+                  type="button"
+                  onClick={() => setAccountType('teacher')}
+                >
+                  Учитель
+                </button>
+              </div>
+              <input className="pn-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Имя" required />
+              <input
+                className="pn-input"
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  setEmailVerificationCode('')
+                }}
+                placeholder="Email"
+                required
+              />
+              <input className="pn-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Пароль" required />
+              <input className="pn-input" type="password" value={passwordConfirmation} onChange={(e) => setPasswordConfirmation(e.target.value)} placeholder="Подтверждение пароля" required />
+              <div className="pn-meta">{accountType === 'teacher' ? 'Инструменты преподавания' : 'Интересующие инструменты'}</div>
+              <div className="dashboard-chip-list profile-instrument-picker auth-instrument-picker" aria-label="Инструменты">
+                {instruments.map((instrument) => (
+                  <label className={`dashboard-chip ${selectedIds.has(instrument.id) ? 'is-selected' : ''}`} key={instrument.id}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(instrument.id)}
+                      onChange={() => toggleInstrument(instrument.id)}
+                    />
+                    {instrument.name}
+                  </label>
+                ))}
+              </div>
+              {accountType === 'student' ? (
+                <select className="pn-select" value={level} onChange={(e) => setLevel(e.target.value)}>
+                  <option>Начинающий</option>
+                  <option>Базовый</option>
+                  <option>Средний</option>
+                </select>
+              ) : (
+                <>
+                  <label className="teacher-documents-field">
+                    <span>Сертификаты, грамоты, дипломы</span>
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
+                      onChange={(e) => setTeacherDocuments(Array.from(e.target.files ?? []))}
+                    />
+                    <em>
+                      Можно приложить до 8 файлов: PDF, изображения, DOC или DOCX. Модератор увидит их вместе с заявкой.
+                    </em>
+                    {teacherDocuments.length > 0 && (
+                      <strong>{teacherDocuments.length} файл(а) выбрано</strong>
+                    )}
+                    <MediaAttachmentPreview values={teacherDocuments} kind="file" emptyText="Документы пока не выбраны." />
+                  </label>
+                  <p className="teacher-register-note">После регистрации модератор проверит заявку. Курсы можно будет создавать после одобрения.</p>
+                </>
+              )}
+              <label className="privacy-consent">
                 <input
-                  type="file"
-                  multiple
-                  accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
-                  onChange={(e) => setTeacherDocuments(Array.from(e.target.files ?? []))}
+                  type="checkbox"
+                  checked={agreed}
+                  required
+                  onChange={(e) => setAgreed(e.target.checked)}
                 />
-                <em>
-                  Можно приложить до 8 файлов: PDF, изображения, DOC или DOCX. Модератор увидит их вместе с заявкой.
-                </em>
-                {teacherDocuments.length > 0 && (
-                  <strong>{teacherDocuments.length} файл(а) выбрано</strong>
-                )}
-                <MediaAttachmentPreview values={teacherDocuments} kind="file" emptyText="Документы пока не выбраны." />
+                <span>
+                  Я согласен на обработку персональных данных и ознакомлен с{' '}
+                  <button type="button" onClick={() => router.visit('/privacy')}>политикой конфиденциальности</button>.
+                </span>
               </label>
-              <p className="teacher-register-note">После регистрации модератор проверит заявку. Курсы можно будет создавать после одобрения.</p>
             </>
           )}
-          <label className="privacy-consent">
-            <input
-              type="checkbox"
-              checked={agreed}
-              required
-              onChange={(e) => setAgreed(e.target.checked)}
-            />
-            <span>
-              Я согласен на обработку персональных данных и ознакомлен с{' '}
-              <button type="button" onClick={() => router.visit('/privacy')}>политикой конфиденциальности</button>.
-            </span>
-          </label>
-          <button className="pn-button is-dark" disabled={!agreed || isSubmitting}>
+          <button className="pn-button is-dark" disabled={!agreed || isSubmitting || (isCodeSent && emailVerificationCode.length !== 6)}>
             {isSubmitting ? (isCodeSent ? 'Создаем...' : 'Отправляем...') : isCodeSent ? 'Создать аккаунт' : 'Получить код'}
           </button>
           {isCodeSent && (
-            <button
-              type="button"
-              className="auth-link"
-              disabled={isSubmitting}
-              onClick={async () => {
-                setIsSubmitting(true)
-                setMessage('')
-                try {
-                  await postJson('/register/email-code', { email })
-                  setMessage('Новый код подтверждения отправлен на почту.')
-                } catch (error) {
-                  setMessage(error instanceof Error ? error.message : 'Не удалось отправить код.')
-                } finally {
-                  setIsSubmitting(false)
-                }
-              }}
-            >
-              Отправить код еще раз
-            </button>
+            <div className="auth-code-actions">
+              <button
+                type="button"
+                className="auth-link"
+                disabled={isSubmitting}
+                onClick={async () => {
+                  setIsSubmitting(true)
+                  setMessage('')
+                  try {
+                    await postJson('/register/email-code', { email })
+                    setMessage('Новый код подтверждения отправлен на почту.')
+                  } catch (error) {
+                    setMessage(error instanceof Error ? error.message : 'Не удалось отправить код.')
+                  } finally {
+                    setIsSubmitting(false)
+                  }
+                }}
+              >
+                Отправить код еще раз
+              </button>
+              <button
+                type="button"
+                className="auth-link"
+                disabled={isSubmitting}
+                onClick={() => {
+                  setIsCodeSent(false)
+                  setEmailVerificationCode('')
+                  setMessage('')
+                }}
+              >
+                Изменить данные
+              </button>
+            </div>
           )}
           <button type="button" className="auth-link" onClick={() => router.visit('/login')}>Уже есть аккаунт?</button>
           {message && <p className="pn-text">{message}</p>}

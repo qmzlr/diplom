@@ -1,4 +1,9 @@
 type JsonBody = Record<string, unknown>
+type ErrorPayload = {
+  errors?: Record<string, unknown>
+  message?: unknown
+  error?: unknown
+}
 
 export type UploadProgressState = {
   percent: number | null
@@ -15,15 +20,20 @@ function csrfToken() {
     ?.getAttribute('content')
 }
 
-function responseMessage(payload: any) {
-  const firstFieldError = payload?.errors
-    ? Object.values(payload.errors).flat().find(Boolean)
+function isErrorPayload(payload: unknown): payload is ErrorPayload {
+  return Boolean(payload && typeof payload === 'object')
+}
+
+function responseMessage(payload: unknown) {
+  const data = isErrorPayload(payload) ? payload : null
+  const firstFieldError = data?.errors
+    ? Object.values(data?.errors ?? {}).flat().find(Boolean)
     : null
 
   return localizeMessage(String(
     firstFieldError ||
-      payload?.message ||
-      payload?.error ||
+      data?.message ||
+      data?.error ||
       'Что-то пошло не так. Попробуйте снова.',
   ))
 }
@@ -117,7 +127,7 @@ export function uploadFormData<T>(
     }
 
     request.onload = () => {
-      let payload: any = null
+      let payload: unknown = null
       try {
         payload = request.responseText ? JSON.parse(request.responseText) : null
       } catch {

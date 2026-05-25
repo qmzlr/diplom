@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 type PreviewKind = 'image' | 'video' | 'file'
 
@@ -32,7 +32,7 @@ export function MediaAttachmentPreview({ value, values, kind, emptyText = 'Фа�
 }
 
 function SinglePreview({ value, kind }: { value: string | File; kind?: PreviewKind }) {
-  const [fileUrl, setFileUrl] = useState<string | null>(null)
+  const fileUrl = useMemo(() => typeof value === 'string' ? null : URL.createObjectURL(value), [value])
   const [isOpen, setIsOpen] = useState(false)
   const source = typeof value === 'string' ? value : fileUrl
   const filename = typeof value === 'string' ? fileName(value) : value.name
@@ -40,16 +40,9 @@ function SinglePreview({ value, kind }: { value: string | File; kind?: PreviewKi
   const canPreview = Boolean(source && (resolvedKind === 'image' || resolvedKind === 'video'))
 
   useEffect(() => {
-    if (typeof value === 'string') {
-      setFileUrl(null)
-      return
-    }
-
-    const url = URL.createObjectURL(value)
-    setFileUrl(url)
-
-    return () => URL.revokeObjectURL(url)
-  }, [value])
+    if (!fileUrl) return
+    return () => URL.revokeObjectURL(fileUrl)
+  }, [fileUrl])
 
   const canOpen = Boolean(source)
 

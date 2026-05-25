@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { router } from '@inertiajs/react'
 import { AppShell, PageHero, SectionTitle } from '@/components/AppShell'
 import { MediaAttachmentPreview } from '@/components/MediaAttachmentPreview'
@@ -35,6 +35,21 @@ export default function Admin({
   const [courseItems, setCourseItems] = useState(courses)
   const [userItems, setUserItems] = useState(users)
   const [instrumentItems, setInstrumentItems] = useState(instruments)
+  const liveStats = useMemo(() => {
+    if (workspace === 'teacher') {
+      return [
+        ['Мои курсы', String(courseItems.length)],
+        ['На модерации', String(courseItems.filter((course) => course.status === 'на модерации').length)],
+        ['Опубликовано', String(courseItems.filter((course) => course.status === 'опубликовано').length)],
+      ] as [string, string][]
+    }
+
+    return [
+      ['Пользователи', String(userItems.length)],
+      ['Курсы', String(courseItems.length)],
+      ['Инструменты', String(instrumentItems.length)],
+    ] as [string, string][]
+  }, [courseItems, instrumentItems, userItems, workspace])
 
   const availableTabs = workspace === 'teacher' ? (['Курсы'] as Tab[]) : tabs
   const resolvedActive = active && availableTabs.includes(active) ? active : null
@@ -50,7 +65,7 @@ export default function Admin({
         <div className="pn-container">
           <SectionTitle title="Статистика" aside="Система" />
           <div className="admin-stats">
-            {adminStats.map(([label, value]) => (
+            {(liveStats.length > 0 ? liveStats : adminStats).map(([label, value]) => (
               <article className="pn-card pn-card-body admin-stat-card" key={label}>
                 <div className="pn-meta">{label}</div>
                 <strong>{value}</strong>
@@ -439,12 +454,6 @@ function usePagedRows<T>(rows: T[]) {
   const [page, setPage] = useState(1)
   const pageCount = Math.max(1, Math.ceil(rows.length / adminPageSize))
   const currentPage = Math.min(page, pageCount)
-
-  useEffect(() => {
-    if (page > pageCount) {
-      setPage(pageCount)
-    }
-  }, [page, pageCount])
 
   return {
     page: currentPage,

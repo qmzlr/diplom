@@ -78,6 +78,20 @@ class ProfileController extends Controller
         ]);
     }
 
+    public function destroy(Request $request): JsonResponse
+    {
+        $user = $this->user($request);
+        abort_if(! $user, 403, 'Нужно войти в аккаунт.');
+
+        $request->session()->forget('user_id');
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        $user->delete();
+
+        return response()->json(['success' => true]);
+    }
+
     private function user(Request $request): ?User
     {
         $userId = $request->session()->get('user_id');

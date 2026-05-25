@@ -92,4 +92,5 @@ Route::prefix('api')->name('api.')->group(function () {
 
     Route::patch('/profile', [ProfileController::class, 'update'])->middleware('session.auth')->name('profile.update');
     Route::post('/profile/avatar', [ProfileController::class, 'avatar'])->middleware('session.auth')->name('profile.avatar');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->middleware('session.auth')->name('profile.destroy');
 });
